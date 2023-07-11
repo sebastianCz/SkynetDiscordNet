@@ -2,6 +2,7 @@
 using DSharpPlus.Lavalink;
 using DSharpPlus.SlashCommands;
 using Skynet.Services.Interface;
+using System.Xml.Linq;
 
 namespace Skynet.Services
 {
@@ -14,9 +15,14 @@ namespace Skynet.Services
         }
         public async Task PlayMusic(InteractionContext ctx, string query)
         {
-            var lavalink = await ValidateUserAndConnection(ctx);
-            var node = lavalink.ConnectedNodes.Values.First();
-            var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);
+            var lavalink = await ValidateUser(ctx);
+            var node = lavalink.ConnectedNodes.Values.First();   
+            await node.ConnectAsync(ctx.Member.VoiceState.Channel);
+            var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);  
+            if (conn == null)
+            {
+                throw new Exception("lavalink failed to connect");
+            }
 
             var searchQuery = await node.Rest.GetTracksAsync(query); 
             if (searchQuery.LoadResultType == LavalinkLoadResultType.NoMatches || searchQuery.LoadResultType == LavalinkLoadResultType.LoadFailed)
@@ -29,39 +35,37 @@ namespace Skynet.Services
         }
         public async Task PauseMusic(InteractionContext ctx)
         {
-            var lavalink = await ValidateUserAndConnection(ctx);
+            var lavalink = await ValidateUser(ctx);
             var node = lavalink.ConnectedNodes.Values.First();
-            var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);
-
-            await conn.PauseAsync();  
-            _messageSender.SendMessage(ctx, $"Track Paused", $" Type /Resume to keep listening", DiscordColor.Yellow); 
+            var conn = await IsBotConnected(ctx, node); 
+                await conn.PauseAsync();
+                _messageSender.SendMessage(ctx, $"Track Paused", $" Type /Resume to keep listening", DiscordColor.Yellow); 
+            
         }
         public async Task ResumeMusic(InteractionContext ctx)
         {
-            var lavalink = await ValidateUserAndConnection(ctx);
+            var lavalink = await ValidateUser(ctx);
             var node = lavalink.ConnectedNodes.Values.First();
-            var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);
-
+            var conn = await IsBotConnected(ctx, node);
             await conn.ResumeAsync();
             _messageSender.SendMessage(ctx, $"Track Resumed", $" Music should be now playing", DiscordColor.Green);
         }
         public async Task StopMusic(InteractionContext ctx)
         {
-            var lavalink = await ValidateUserAndConnection(ctx);
+            var lavalink = await ValidateUser(ctx);
             var node = lavalink.ConnectedNodes.Values.First();
-            var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);
+            var conn = await IsBotConnected(ctx, node);
 
             await conn.StopAsync();
             await conn.DisconnectAsync();
             _messageSender.SendMessage(ctx, $"Music stopped", $" Turns out you can stop Rock'N'Roll", DiscordColor.Red);
         }
 
-        private async Task<LavalinkExtension> ValidateUserAndConnection(InteractionContext ctx)
+        private async Task<LavalinkExtension> ValidateUser(InteractionContext ctx)
         {
-            var lavaLinkInstance = ctx.Client.GetLavalink(); //LavalinkExtension 
-            var userVc = ctx.Member.VoiceState.Channel;
+            var lavaLinkInstance = ctx.Client.GetLavalink(); //LavalinkExtension  
 
-            if (ctx.Member.VoiceState == null || userVc == null)
+            if (ctx.Member.VoiceState == null || ctx.Member.VoiceState.Channel == null)
             {
                 throw new Exception("Please enter a voice channel");
             }
@@ -69,24 +73,19 @@ namespace Skynet.Services
             {
                 throw new Exception("Lavalink connection failed");
             }
-            if (userVc.Type != DSharpPlus.ChannelType.Voice)
+            if (ctx.Member.VoiceState.Channel.Type != DSharpPlus.ChannelType.Voice)
             {
                 throw new Exception("Please enter a valid VC");
-            }
-
-            var node = lavaLinkInstance.ConnectedNodes.Values.First();
-            //LavalinkNodeConnection
-
-            await node.ConnectAsync(userVc);
-            var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);
-
-            if (conn == null)
-            {
-                throw new Exception("lavalink failed to connect");
-            }
+            } 
+           
             return lavaLinkInstance;
 
-        }
-         
+        } 
+        private async Task<LavalinkGuildConnection> IsBotConnected(InteractionContext ctx,LavalinkNodeConnection node)
+        {
+            var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);
+            if (conn == null) { throw new Exception("I'm not in a channel right now."); }
+            return conn;
+        } 
     }
 }
