@@ -3,6 +3,8 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
+using DSharpPlus.Lavalink;
+using DSharpPlus.Net;
 using DSharpPlus.SlashCommands;
 using Newtonsoft.Json;
 using Skynet.Commands;
@@ -45,31 +47,52 @@ namespace Skynet
             services.AddScoped<IValidation, ValidateInput>();
             services.AddScoped<ISteamApiClient, SteamApiClient>();
             services.AddScoped<ICheaterLogic, CheaterLogic>();
+            services.AddScoped<IMusic, MusicService>();
+            services.AddScoped<IMessageSender, MessageSender>();
             services.AddHttpClient(SteamApiConfig.SteamApiClientName,
                client => { client.BaseAddress = new Uri("https://api.steampowered.com"); });
 
             //Commands+ service provider config.
 
-            var commandsConfig = new CommandsNextConfiguration()
-            {
-                StringPrefixes = new string[] { configJson.Prefix },
-                EnableMentionPrefix = true,
-                EnableDms = true,
-                EnableDefaultHelp = false,
-                Services = services.BuildServiceProvider()
+            //var commandsConfig = new CommandsNextConfiguration()
+            //{
+            //    StringPrefixes = new string[] { configJson.Prefix },
+            //    EnableMentionPrefix = true,
+            //    EnableDms = true,
+            //    EnableDefaultHelp = false,
+            //    Services = services.BuildServiceProvider()
 
-            };
+            //};
+            //
+            // Commands = Client.UseCommandsNext(commandsConfig);
+            //
+            //Commands.RegisterCommands<PrefixCommands>();
 
             var slash = Client.UseSlashCommands(new SlashCommandsConfiguration
             {
                 Services = services.BuildServiceProvider()
             });
-            Commands = Client.UseCommandsNext(commandsConfig);
             //commands registration
-            Commands.RegisterCommands<PrefixCommands>();
-            slash.RegisterCommands<CheaterSL>();
+            //slash.RegisterCommands<CheaterSL>();
+            slash.RegisterCommands<Music>();
+
+            var endpoint = new ConnectionEndpoint
+            {
+                Hostname = "lavalink.snooby.ml",
+                Port = 443,
+                Secured = true,
+
+            };
+            var lavaLinkConfig = new LavalinkConfiguration
+            {
+                Password = "discord.gg/6xpF6YqVDd",
+                RestEndpoint = endpoint,
+                SocketEndpoint = endpoint
+            };
+            var lavalink = Client.UseLavalink();
 
             await Client.ConnectAsync();
+            await lavalink.ConnectAsync(lavaLinkConfig) ;
             await Task.Delay(-1);
         }
         private Task OnClientReady(ReadyEventArgs e)
