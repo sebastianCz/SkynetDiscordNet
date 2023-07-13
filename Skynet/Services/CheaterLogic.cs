@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 using Skynet.db;
-using Skynet.Domain;
+using Skynet.Domain.Cheaters;
 using Skynet.Services.Interface;
 
 namespace Skynet.Services

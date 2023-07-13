@@ -6,6 +6,7 @@ using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.Lavalink;
 using DSharpPlus.Net;
 using DSharpPlus.SlashCommands;
+using Microsoft.AspNetCore.Components.Web;
 using Newtonsoft.Json;
 using Skynet.Commands;
 using Skynet.db;
@@ -41,8 +42,7 @@ namespace Skynet
 
 
             //Services registration
-            var services = new ServiceCollection();
-            services.AddScoped<ITest, Test>();
+            var services = new ServiceCollection(); 
             services.AddScoped<ICrud, Crud>();
             services.AddScoped<IValidation, ValidateInput>();
             services.AddScoped<ISteamApiClient, SteamApiClient>();
@@ -89,7 +89,7 @@ namespace Skynet
                 RestEndpoint = endpoint,
                 SocketEndpoint = endpoint
             };
-            var lavalink = Client.UseLavalink();
+            var lavalink = Client.UseLavalink(); 
 
             await Client.ConnectAsync();
             await lavalink.ConnectAsync(lavaLinkConfig) ;
@@ -98,19 +98,7 @@ namespace Skynet
         private Task OnClientReady(ReadyEventArgs e)
         {
             return Task.CompletedTask;
-        }
-
-    }
-    public interface ITest
-    {
-        public int test { get; }
-    }
-
-    public class Test : ITest
-    {
-        public int test { get { return 2; } }
-    }
-
-
+        }  
+    }  
 }
 

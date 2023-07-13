@@ -1,4 +1,4 @@
-﻿using DSharpPlus.Lavalink.EventArgs;
+﻿ 
 using DSharpPlus.SlashCommands;
 
 namespace Skynet.Services.Interface
@@ -9,5 +9,10 @@ namespace Skynet.Services.Interface
         public Task ResumeMusic(InteractionContext ctx);
         public Task PauseMusic(InteractionContext ctx);
         public Task StopMusic(InteractionContext ctx);
+        public Task Skip(InteractionContext ctx);
+        public Task Clear(InteractionContext ctx);
+        public Task ShowPlaylist(InteractionContext ctx,string options);
+        public Task Shuffle(InteractionContext ctx, string options);
+        
     }
 }

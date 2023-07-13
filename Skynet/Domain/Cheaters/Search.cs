@@ -1,4 +1,4 @@
-﻿namespace Skynet.Domain
+﻿namespace Skynet.Domain.Cheaters
 {
     public class Search
     {

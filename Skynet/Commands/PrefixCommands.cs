@@ -8,8 +8,7 @@ namespace Skynet.Commands
 {
     public class PrefixCommands : BaseCommandModule
     {
-
-        public ITest _test;
+         
         public IHttpClientFactory _clientFactory;
         [Command("test")]
         public async Task TestCommand(CommandContext ctx)
@@ -22,8 +21,7 @@ namespace Skynet.Commands
                 "/?key=AB38F06FC3060B43D9160B098E816854&steamids=76561198013792223";
 
             var steamProfileLink2 = "https://steamcommunity.com/id/VikkoxX/";
-
-            var x = _test.test;
+             
             string responseBody;
             try
             {

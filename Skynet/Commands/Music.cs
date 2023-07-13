@@ -25,7 +25,7 @@ namespace Skynet.Commands
                 .WithContent("Commend received")
                 );
             try
-            {
+            { 
                 await _music.PlayMusic(ctx, searchTerm); 
             }
             catch (Exception e)
@@ -93,5 +93,85 @@ namespace Skynet.Commands
             }
              
         }
+        [SlashCommand("Skip", "Skips to next track on playlist")]
+        public async Task Skip(InteractionContext ctx)
+        {
+            await ctx.CreateResponseAsync(
+                InteractionResponseType.ChannelMessageWithSource,
+                new DiscordInteractionResponseBuilder()
+                .WithContent("Commend received")
+                );
+            try
+            {
+                await _music.Skip(ctx);
+            }
+            catch (Exception e)
+            {
+                await _messageSender.SendMessage(ctx, "An Error occured", e.Message, DiscordColor.Red);
+                await _messageSender.LogError(ctx, e.Message, e.StackTrace, LoggingLevel.information);
+            }
+
+        }
+        [SlashCommand("Clear", "Clears Playlist")]
+        public async Task Clear(InteractionContext ctx)
+        {
+            await ctx.CreateResponseAsync(
+                InteractionResponseType.ChannelMessageWithSource,
+                new DiscordInteractionResponseBuilder()
+                .WithContent("Commend received")
+                );
+            try
+            {
+                await _music.Clear(ctx);
+                await _messageSender.SendMessage(ctx, "Playlist cleared", "No tracks queued", DiscordColor.Red);
+            }
+            catch (Exception e)
+            {
+                await _messageSender.SendMessage(ctx, "An Error occured", e.Message, DiscordColor.Red);
+                await _messageSender.LogError(ctx, e.Message, e.StackTrace, LoggingLevel.information);
+            }
+
+        }
+        [SlashCommand("Shuffle", "Finds random songs based on user preferences and known tracks")]
+        public async Task Shuffle(InteractionContext ctx, [Option("ShuffleStatus","Type 1 to activate. Type 2 to deactivate")]string options)
+        {
+            await ctx.CreateResponseAsync(
+                InteractionResponseType.ChannelMessageWithSource,
+                new DiscordInteractionResponseBuilder()
+                .WithContent("Commend received")
+                );
+            try
+            {
+                await _music.Shuffle(ctx,options);
+            }
+            catch (Exception e)
+            {
+                await _messageSender.SendMessage(ctx, "An Error occured", e.Message, DiscordColor.Red);
+                await _messageSender.LogError(ctx, e.Message, e.StackTrace, LoggingLevel.information);
+            }
+
+        }
+        
+        [SlashCommand("ShowPlaylist", "Provides currently queued tacks")]
+        public async Task ShowPlaylist(InteractionContext ctx, [Option("DetailLevel", "Type 1 to get a summary. Type 2 to get full details")] string options)
+        {
+            await ctx.CreateResponseAsync(
+                InteractionResponseType.ChannelMessageWithSource,
+                new DiscordInteractionResponseBuilder()
+                .WithContent("Commend received")
+                );
+            try
+            {
+                await _music.ShowPlaylist(ctx,options);
+            }
+            catch (Exception e)
+            {
+                await _messageSender.SendMessage(ctx, "An Error occured", e.Message, DiscordColor.Red);
+                await _messageSender.LogError(ctx, e.Message, e.StackTrace, LoggingLevel.information);
+            }
+
+        }
+
+
     }
 }

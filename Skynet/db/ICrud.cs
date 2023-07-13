@@ -1,4 +1,4 @@
-﻿using Skynet.Domain;
+﻿using Skynet.Domain.Cheaters;
 using Skynet.Domain.Steam;
 
 namespace Skynet.db

@@ -9,7 +9,7 @@ namespace Skynet.db
         public static bool SaveFile(string fileName, string fileContent)
         {
             var dir = Directory.GetCurrentDirectory();
-            var fileNamePath = Path.Combine(dir, fileName + ".json");
+            var fileNamePath = Path.Combine(dir,"db", fileName + ".json");
             try
             {
                 File.WriteAllText(fileNamePath, fileContent);
@@ -29,7 +29,7 @@ namespace Skynet.db
         public static string ReadFile(string fileName)
         {
             var dir = Directory.GetCurrentDirectory();
-            var fileNamePath = Path.Combine(dir, fileName + ".json");
+            var fileNamePath = Path.Combine(dir, "db", fileName + ".json");
             return File.ReadAllText(fileNamePath);
         }
 
@@ -40,8 +40,8 @@ namespace Skynet.db
         public static bool FileExitsInDirectory(string fileName)
         {
             string dir = Directory.GetCurrentDirectory();
-            string filePath = Path.Combine(dir, fileName + ".json");
-            return File.Exists(filePath);
+            var fileNamePath = Path.Combine(dir, "db", fileName + ".json");
+            return File.Exists(fileNamePath);
         }
 
         /// <summary>

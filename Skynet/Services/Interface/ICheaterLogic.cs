@@ -1,4 +1,4 @@
-﻿using Skynet.Domain;
+﻿using Skynet.Domain.Cheaters;
 
 namespace Skynet.Services.Interface
 {
