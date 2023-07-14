@@ -9,11 +9,13 @@ namespace Skynet.Commands
     public class Music : ApplicationCommandModule
     {
         private readonly IMusic _music;
+        private readonly ILavalinkConnectionManager _connectionManager;
         private readonly IMessageSender _messageSender;
-        public Music(IMusic crud,IMessageSender sender)
+        public Music(IMusic crud,IMessageSender sender,ILavalinkConnectionManager connectionManager)
         {
             _music  = crud;
             _messageSender = sender;    
+            _connectionManager = connectionManager;
         }
 
         [SlashCommand("Play", "Plays the specified music. You can provide a link or a search term")]
@@ -25,7 +27,9 @@ namespace Skynet.Commands
                 .WithContent("Commend received")
                 );
             try
-            { 
+            {
+                await _connectionManager.AssureConnected(ctx);
+                await _connectionManager.OnCommandChecksAsync(ctx);
                 await _music.PlayMusic(ctx, searchTerm); 
             }
             catch (Exception e)
@@ -45,7 +49,8 @@ namespace Skynet.Commands
                 );
             try
             {
-
+                await _connectionManager.AssureConnected(ctx);
+                await _connectionManager.OnCommandChecksAsync(ctx); 
                 await _music.ResumeMusic(ctx);
             }
             catch (Exception e)
@@ -64,7 +69,7 @@ namespace Skynet.Commands
                 );
             try
             {
-
+                await _connectionManager.OnCommandChecksAsync(ctx);
                 await _music.StopMusic(ctx);
             }
             catch (Exception e)
@@ -83,7 +88,8 @@ namespace Skynet.Commands
                 .WithContent("Commend received")
                 );
             try
-            { 
+            {
+                await _connectionManager.OnCommandChecksAsync(ctx);
                 await _music.PauseMusic(ctx);
             }
             catch (Exception e)
@@ -103,6 +109,8 @@ namespace Skynet.Commands
                 );
             try
             {
+                await _connectionManager.AssureConnected(ctx);
+                await _connectionManager.OnCommandChecksAsync(ctx);
                 await _music.Skip(ctx);
             }
             catch (Exception e)
@@ -122,6 +130,7 @@ namespace Skynet.Commands
                 );
             try
             {
+                await _connectionManager.OnCommandChecksAsync(ctx);
                 await _music.Clear(ctx);
                 await _messageSender.SendMessage(ctx, "Playlist cleared", "No tracks queued", DiscordColor.Red);
             }
@@ -142,6 +151,8 @@ namespace Skynet.Commands
                 );
             try
             {
+                await _connectionManager.AssureConnected(ctx);
+                await _connectionManager.OnCommandChecksAsync(ctx);
                 await _music.Shuffle(ctx,options);
             }
             catch (Exception e)
@@ -162,6 +173,7 @@ namespace Skynet.Commands
                 );
             try
             {
+                await _connectionManager.OnCommandChecksAsync(ctx);
                 await _music.ShowPlaylist(ctx,options);
             }
             catch (Exception e)

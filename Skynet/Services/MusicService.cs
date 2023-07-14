@@ -13,9 +13,11 @@ namespace Skynet.Services
     public class MusicService : IMusic
     {
         private readonly IMessageSender _messageSender; 
-        public MusicService(IMessageSender sender)
+        private readonly ILavalinkConnectionManager _connectionManager;
+        public MusicService(IMessageSender sender,ILavalinkConnectionManager connectionManager)
         {
                 _messageSender = sender;
+            _connectionManager = connectionManager;  
         }
         public async Task Shuffle(InteractionContext ctx,string options)
         {
@@ -55,21 +57,15 @@ namespace Skynet.Services
             return searchTerms[searchTermId].Term;
         }
         private async Task PlayShuffle(InteractionContext ctx,ShuffleConfig config)
-        {
-            var lavalink = await ValidateUser(ctx);
-            var node = lavalink.ConnectedNodes.Values.First();
-            await node.ConnectAsync(ctx.Member.VoiceState.Channel);
-            var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);
-            if (conn == null)
-            {
-                throw new Exception("lavalink failed to connect");
-            } 
+        { 
+            var guildConnection = await _connectionManager.GetGuildConnection(ctx);
+            var nodeConnection = await _connectionManager.GetNodeConnection(ctx);
                 List<LavalinkTrack> currentPlaylist;
                 ShuffleConfig liveConfig;
                 do
                 { 
                 var searchTerm = await SearchShuffle();
-                        var searchResult = await node.Rest.GetTracksAsync(searchTerm);
+                        var searchResult = await nodeConnection.Rest.GetTracksAsync(searchTerm);
                         if (searchResult.LoadResultType == LavalinkLoadResultType.NoMatches || searchResult.LoadResultType == LavalinkLoadResultType.LoadFailed)
                         { 
                                  _messageSender.SendMessage(ctx, $"Just a couple seconds", $"Failed to find a song with search term {searchTerm}\n Searching again.", DiscordColor.Green);
@@ -78,7 +74,7 @@ namespace Skynet.Services
                         }
                      var musicTrack = searchResult.Tracks.First(); 
                     _messageSender.SendMessage(ctx, $"Now Playing: {musicTrack.Title}", $" Link: {musicTrack.Uri}", DiscordColor.Green);
-                    await conn.PlayAsync(musicTrack);
+                    await guildConnection.PlayAsync(musicTrack);
                     var timer = musicTrack.Length;
                     await Task.Delay(timer); 
 
@@ -87,8 +83,8 @@ namespace Skynet.Services
                     
                 }
                 while (liveConfig.ShuffleStatusOn);
-                await conn.StopAsync();
-                await conn.DisconnectAsync();
+                await guildConnection.StopAsync();
+                await guildConnection.DisconnectAsync();
                 _messageSender.SendMessage(ctx, $"Shuffle Ended", "Type /play or /shuffle for music to resume.", DiscordColor.Green);
             
 
@@ -106,11 +102,8 @@ namespace Skynet.Services
             ReaderJson.SaveFile("LiveConfig", configString);
             await _messageSender.SendMessage(ctx, "Shuffle Stopped", "Next song won't be selected.", DiscordColor.Green);
 
-
-            var lavalink = await ValidateUser(ctx);
-            var node = lavalink.ConnectedNodes.Values.First();
-            var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);
-            await conn.DisconnectAsync();
+            var connection = await _connectionManager.GetConnectionData(ctx);  
+            await connection.GuildConnection.DisconnectAsync();
         }
         private async Task ShuffleOn(InteractionContext ctx,ShuffleConfig config)
         {
@@ -142,27 +135,18 @@ namespace Skynet.Services
               } 
             await _messageSender.SendMessage(ctx,"Playlist Summary",msg, DiscordColor.Yellow);
         }
-
+   
         public async Task PlayMusic(InteractionContext ctx, string query)
-        { 
-            var lavalink = await ValidateUser(ctx);
-            var node = lavalink.ConnectedNodes.Values.First();   
-            await node.ConnectAsync(ctx.Member.VoiceState.Channel);
-            var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);  
-            if (conn == null)
-            {
-                throw new Exception("lavalink failed to connect");
-            }
-          
-
-            var searchQuery = await node.Rest.GetTracksAsync(query); 
+        {
+            var connection = await _connectionManager.GetConnectionData(ctx); 
+            var searchQuery = await connection.NodeConnection.Rest.GetTracksAsync(query); 
             if (searchQuery.LoadResultType == LavalinkLoadResultType.NoMatches || searchQuery.LoadResultType == LavalinkLoadResultType.LoadFailed)
             {
                 throw new Exception("Failed to find music corresponding to your query");
             } 
             var musicTrack = searchQuery.Tracks.First(); 
             
-            if (conn.CurrentState.CurrentTrack != null)
+            if (connection.GuildConnection.CurrentState.CurrentTrack != null)
             {
                 await _messageSender.SendMessage(ctx, "A track is already playing! ", $" Your song:{musicTrack.Title} was added to playlist ",DiscordColor.Yellow);
                 var task1 = AddToPlaylist(musicTrack);
@@ -173,30 +157,9 @@ namespace Skynet.Services
             }
             else
             { 
-                List<LavalinkTrack> currentPlaylist;
-                do
-                {
-                    _messageSender.SendMessage(ctx, $"Now Playing: {musicTrack.Title}", $" Link: {musicTrack.Uri}", DiscordColor.Green);
-                    await conn.PlayAsync(musicTrack);
-                    var timer = musicTrack.Length;
-                    await Task.Delay(timer);
-                    var currentPlaylistString = ReaderJson.ReadFile("MusicPlaylist");
-                    currentPlaylist = JsonConvert.DeserializeObject<List<LavalinkTrack>>(currentPlaylistString);
-                    if (currentPlaylist.Count > 0)
-                    {
-                        searchQuery= await node.Rest.GetTracksAsync(currentPlaylist[0].Uri);
-                        if (searchQuery.LoadResultType == LavalinkLoadResultType.NoMatches || searchQuery.LoadResultType == LavalinkLoadResultType.LoadFailed)
-                        {
-                            throw new Exception("Failed to find music corresponding to your query");
-                        }
-                        musicTrack = searchQuery.Tracks.First();
-                        await conn.PlayAsync(musicTrack);
-                    }
-                }
-                while (currentPlaylist.Count > 0);
-                await conn.StopAsync();
-            await conn.DisconnectAsync();
-                _messageSender.SendMessage(ctx, $"Playlist Ended","Type /play or /shuffle for music to resume." , DiscordColor.Green);
+                List<LavalinkTrack> currentPlaylist; 
+                _messageSender.SendMessage(ctx, $"Now Playing: {musicTrack.Title}", $" Link: {musicTrack.Uri}+Lenght:{musicTrack.Length}", DiscordColor.Green);
+                await connection.GuildConnection.PlayAsync(musicTrack);     
             }
             
         } 
@@ -218,59 +181,26 @@ namespace Skynet.Services
         }
         public async Task PauseMusic(InteractionContext ctx)
         {
-            var lavalink = await ValidateUser(ctx);
-            var node = lavalink.ConnectedNodes.Values.First();
-            var conn = await IsBotConnected(ctx, node); 
-                await conn.PauseAsync();
+            var connection = await _connectionManager.GetConnectionData(ctx);
+              await connection.GuildConnection.PauseAsync();
                 _messageSender.SendMessage(ctx, $"Track Paused", $" Type /Resume to keep listening", DiscordColor.Yellow); 
             
         }
         public async Task ResumeMusic(InteractionContext ctx)
         {
-            var lavalink = await ValidateUser(ctx);
-            var node = lavalink.ConnectedNodes.Values.First();
-            var conn = await IsBotConnected(ctx, node);
-            await conn.ResumeAsync();
+            var connection = await _connectionManager.GetConnectionData(ctx);
+            await connection.GuildConnection.ResumeAsync();
             _messageSender.SendMessage(ctx, $"Track Resumed", $" Music should be now playing", DiscordColor.Green);
         }
         public async Task StopMusic(InteractionContext ctx)
         {
-            var lavalink = await ValidateUser(ctx);
-            var node = lavalink.ConnectedNodes.Values.First();
-            var conn = await IsBotConnected(ctx, node); 
-
-            await conn.StopAsync();
-            await conn.DisconnectAsync();
+            if (!await _connectionManager.IsConnectedAsync(ctx)) { throw new Exception("Music isn't playing right now!");} 
+            var guildConnection = await _connectionManager.GetGuildConnection(ctx);
+            await guildConnection.StopAsync();
+            await guildConnection.DisconnectAsync();
             _messageSender.SendMessage(ctx, $"Music stopped", $" Turns out you can stop Rock'N'Roll", DiscordColor.Red);
         }
-        
-
-        private async Task<LavalinkExtension> ValidateUser(InteractionContext ctx)
-        {
-            var lavaLinkInstance = ctx.Client.GetLavalink(); //LavalinkExtension  
-
-            if (ctx.Member.VoiceState == null || ctx.Member.VoiceState.Channel == null)
-            {
-                throw new Exception("Please enter a voice channel");
-            }
-            if (!lavaLinkInstance.ConnectedNodes.Any())
-            {
-                throw new Exception("Lavalink connection failed");
-            }
-            if (ctx.Member.VoiceState.Channel.Type != DSharpPlus.ChannelType.Voice)
-            {
-                throw new Exception("Please enter a valid VC");
-            } 
-           
-            return lavaLinkInstance;
-
-        } 
-        private async Task<LavalinkGuildConnection> IsBotConnected(InteractionContext ctx,LavalinkNodeConnection node)
-        {
-            var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);
-            if (conn == null) { throw new Exception("I'm not in a channel right now."); }
-            return conn;
-        }
+          
         private async Task AddSearchTermToList(string term, InteractionContext ctx)
         {
             var allUsersString = ReaderJson.ReadFile("MusicUsers");
@@ -317,15 +247,7 @@ namespace Skynet.Services
 
         public async Task Skip(InteractionContext ctx)
         {
-            var lavalink = await ValidateUser(ctx);
-            var node = lavalink.ConnectedNodes.Values.First();
-            await node.ConnectAsync(ctx.Member.VoiceState.Channel);
-            var conn = node.GetGuildConnection(ctx.Member.VoiceState.Guild);
-            if (conn == null)
-            {
-                throw new Exception("lavalink failed to connect");
-            }
-
+            var connection = await _connectionManager.GetConnectionData(ctx);
             var currentPlaylistString = ReaderJson.ReadFile("MusicPlaylist");
             var currentPlaylist = JsonConvert.DeserializeObject<List<LavalinkTrack>>(currentPlaylistString);
             var firstSong = currentPlaylist.FirstOrDefault();
@@ -338,13 +260,13 @@ namespace Skynet.Services
             ReaderJson.SaveFile("MusicPlaylist", currentPlaylistString);
             await _messageSender.SendMessage(ctx, $"Now Playing: {firstSong.Title}", $" Link: {firstSong.Uri}", DiscordColor.Green);
 
-            var searchQuery = await node.Rest.GetTracksAsync(firstSong.Uri);
+            var searchQuery = await connection.NodeConnection.Rest.GetTracksAsync(firstSong.Uri);
             if (searchQuery.LoadResultType == LavalinkLoadResultType.NoMatches || searchQuery.LoadResultType == LavalinkLoadResultType.LoadFailed)
             {
                 throw new Exception("Failed to find music corresponding to your query. The next song URL was saved with an error.");
             }
             var musicTrack = searchQuery.Tracks.First(); 
-            await conn.PlayAsync(musicTrack); 
+            await connection.GuildConnection.PlayAsync(musicTrack); 
 
         }
 

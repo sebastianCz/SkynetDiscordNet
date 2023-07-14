@@ -14,6 +14,8 @@ using Skynet.Domain;
 using Skynet.Domain.Steam;
 using Skynet.Services;
 using Skynet.Services.Interface;
+using Skynet.Services.LavalinkConnection;
+using System.Numerics;
 
 namespace Skynet
 {
@@ -48,7 +50,8 @@ namespace Skynet
             services.AddScoped<ISteamApiClient, SteamApiClient>();
             services.AddScoped<ICheaterLogic, CheaterLogic>();
             services.AddScoped<IMusic, MusicService>();
-            services.AddScoped<IMessageSender, MessageSender>();
+            services.AddScoped<IMessageSender, MessageSender>(); 
+            services.AddScoped<ILavalinkConnectionManager, LavalinkConnectionManager>();
             services.AddHttpClient(SteamApiConfig.SteamApiClientName,
                client => { client.BaseAddress = new Uri("https://api.steampowered.com"); });
 
@@ -92,13 +95,14 @@ namespace Skynet
             var lavalink = Client.UseLavalink(); 
 
             await Client.ConnectAsync();
-            await lavalink.ConnectAsync(lavaLinkConfig) ;
+            await lavalink.ConnectAsync(lavaLinkConfig); 
             await Task.Delay(-1);
         }
         private Task OnClientReady(ReadyEventArgs e)
         {
             return Task.CompletedTask;
-        }  
+        }
+      
     }  
 }
 
