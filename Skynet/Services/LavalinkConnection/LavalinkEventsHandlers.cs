@@ -8,7 +8,8 @@
         }
         public async Task PlaybackEnded(object sender, EventArgs e)
         {
-            Console.WriteLine($"PlaybackStarted");
+
+            Console.WriteLine($"PlaybackEnded");
         }
     }
 }

@@ -26,7 +26,7 @@ namespace Skynet.db
         public static void SerialiseAndSave<T>(T objectToSerialize, string fileName)
         {
             var dir = Directory.GetCurrentDirectory();
-            var fileNamePath = Path.Combine(dir, "JsonLib", fileName + ".json");
+            var fileNamePath = Path.Combine(dir, "db", fileName + ".json");
             File.WriteAllText(fileNamePath, JsonConvert.SerializeObject(objectToSerialize));
         }
         //Returns a string containing the entirety of a Json file.

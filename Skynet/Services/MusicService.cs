@@ -155,13 +155,41 @@ namespace Skynet.Services
                 await Task.WhenAll(taskList); 
             }
             else
-            { 
-                List<LavalinkTrack> currentPlaylist; 
+            {  
                 _messageSender.SendMessage(ctx, $"Now Playing: {musicTrack.Title}", $" Link: {musicTrack.Uri}+Lenght:{musicTrack.Length}", DiscordColor.Green);
                 await connection.GuildConnection.PlayAsync(musicTrack);     
             }
             
-        } 
+        }
+
+        public async Task Skip(InteractionContext ctx)
+        {
+            var connection = await _connectionManager.GetConnectionData(ctx);
+            var currentPlaylist = ReaderJson.DeserializeFile<List<LavalinkTrack>>("MusicPlaylist");
+            var firstSong = currentPlaylist.FirstOrDefault();
+            if (firstSong == null)
+            {
+                throw new Exception("Playlist is empty");
+            }
+            currentPlaylist.Remove(firstSong);
+            ReaderJson.SerialiseAndSave(currentPlaylist, "MusicPlaylist");
+            await _messageSender.SendMessage(ctx, $"Now Playing: {firstSong.Title}", $" Link: {firstSong.Uri}", DiscordColor.Green);
+
+            var searchQuery = await connection.NodeConnection.Rest.GetTracksAsync(firstSong.Uri);
+            if (searchQuery.LoadResultType == LavalinkLoadResultType.NoMatches || searchQuery.LoadResultType == LavalinkLoadResultType.LoadFailed)
+            {
+                throw new Exception("Failed to find music corresponding to your query. The next song URL was saved with an error.");
+            }
+            var musicTrack = searchQuery.Tracks.First();
+            await connection.GuildConnection.PlayAsync(musicTrack);
+
+        }
+
+        public async Task Clear(InteractionContext ctx)
+        {
+            var newList = new List<LavalinkTrack>();
+            ReaderJson.SerialiseAndSave(newList, "MusicPlaylist");
+        }
         public async Task AddToArchive(LavalinkTrack track)
         {
             var currentPlaylist = ReaderJson.DeserializeFile<List<LavalinkTrack>>("PlaylistArchive");
@@ -169,8 +197,7 @@ namespace Skynet.Services
             ReaderJson.SerialiseAndSave(currentPlaylist, "PlaylistArchive");
         }
         public async Task AddToPlaylist(LavalinkTrack track)
-        {
-
+        { 
             var currentPlaylist = ReaderJson.DeserializeFile<List<LavalinkTrack>>("MusicPlaylist"); 
             currentPlaylist.Add(track); 
             ReaderJson.SerialiseAndSave(currentPlaylist, "MusicPlaylist");
@@ -240,33 +267,5 @@ namespace Skynet.Services
             }
         }
 
-        public async Task Skip(InteractionContext ctx)
-        {
-            var connection = await _connectionManager.GetConnectionData(ctx); 
-            var currentPlaylist = ReaderJson.DeserializeFile<List<LavalinkTrack>>("MusicPlaylist"); 
-            var firstSong = currentPlaylist.FirstOrDefault();
-            if(firstSong == null)
-            {
-                throw new Exception("Playlist is empty");
-            } 
-            currentPlaylist.Remove(firstSong);
-            ReaderJson.SerialiseAndSave(currentPlaylist, "MusicPlaylist"); 
-            await _messageSender.SendMessage(ctx, $"Now Playing: {firstSong.Title}", $" Link: {firstSong.Uri}", DiscordColor.Green);
-
-            var searchQuery = await connection.NodeConnection.Rest.GetTracksAsync(firstSong.Uri);
-            if (searchQuery.LoadResultType == LavalinkLoadResultType.NoMatches || searchQuery.LoadResultType == LavalinkLoadResultType.LoadFailed)
-            {
-                throw new Exception("Failed to find music corresponding to your query. The next song URL was saved with an error.");
-            }
-            var musicTrack = searchQuery.Tracks.First(); 
-            await connection.GuildConnection.PlayAsync(musicTrack); 
-
-        }
-
-        public async Task Clear(InteractionContext ctx)
-        {
-            var newList = new List<LavalinkTrack>(); 
-            ReaderJson.SerialiseAndSave(newList, "MusicPlaylist");
-        }
     }
 }

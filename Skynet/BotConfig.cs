@@ -92,10 +92,13 @@ namespace Skynet
                 RestEndpoint = endpoint,
                 SocketEndpoint = endpoint
             };
-            var lavalink = Client.UseLavalink(); 
+            var lavalinkHandlers = new LavalinkEventsHandlers();
+            var lavalink = Client.UseLavalink();
 
             await Client.ConnectAsync();
             await lavalink.ConnectAsync(lavaLinkConfig); 
+            lavalink.ConnectedNodes.FirstOrDefault().Value.PlaybackStarted += (con, e) => lavalinkHandlers.PlaybackStarted(con, e);
+            lavalink.ConnectedNodes.FirstOrDefault().Value.PlaybackFinished += (con, e) => lavalinkHandlers.PlaybackEnded(con, e);
             await Task.Delay(-1);
         }
         private Task OnClientReady(ReadyEventArgs e)
