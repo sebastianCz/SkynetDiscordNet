@@ -57,15 +57,14 @@ namespace Skynet.Services
             return searchTerms[searchTermId].Term;
         }
         private async Task PlayShuffle(InteractionContext ctx,ShuffleConfig config)
-        { 
-            var guildConnection = await _connectionManager.GetGuildConnection(ctx);
-            var nodeConnection = await _connectionManager.GetNodeConnection(ctx);
+        {
+            var connection = await _connectionManager.GetConnectionData(ctx);
                 List<LavalinkTrack> currentPlaylist;
                 ShuffleConfig liveConfig;
                 do
                 { 
                 var searchTerm = await SearchShuffle();
-                        var searchResult = await nodeConnection.Rest.GetTracksAsync(searchTerm);
+                        var searchResult = await connection.NodeConnection.Rest.GetTracksAsync(searchTerm);
                         if (searchResult.LoadResultType == LavalinkLoadResultType.NoMatches || searchResult.LoadResultType == LavalinkLoadResultType.LoadFailed)
                         { 
                                  _messageSender.SendMessage(ctx, $"Just a couple seconds", $"Failed to find a song with search term {searchTerm}\n Searching again.", DiscordColor.Green);
@@ -74,7 +73,7 @@ namespace Skynet.Services
                         }
                      var musicTrack = searchResult.Tracks.First(); 
                     _messageSender.SendMessage(ctx, $"Now Playing: {musicTrack.Title}", $" Link: {musicTrack.Uri}", DiscordColor.Green);
-                    await guildConnection.PlayAsync(musicTrack);
+                    await connection.GuildConnection.PlayAsync(musicTrack);
                     var timer = musicTrack.Length;
                     await Task.Delay(timer); 
 
@@ -83,8 +82,8 @@ namespace Skynet.Services
                     
                 }
                 while (liveConfig.ShuffleStatusOn);
-                await guildConnection.StopAsync();
-                await guildConnection.DisconnectAsync();
+                    await connection.GuildConnection.StopAsync();
+                    await connection.GuildConnection.DisconnectAsync();
                 _messageSender.SendMessage(ctx, $"Shuffle Ended", "Type /play or /shuffle for music to resume.", DiscordColor.Green);
             
 
