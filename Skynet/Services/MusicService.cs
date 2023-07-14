@@ -164,19 +164,16 @@ namespace Skynet.Services
         } 
         public async Task AddToArchive(LavalinkTrack track)
         {
-            var currentPlaylistString = ReaderJson.ReadFile("PlaylistArchive");
-            var currentPlaylist = JsonConvert.DeserializeObject<List<LavalinkTrack>>(currentPlaylistString);
-            currentPlaylist.Add(track);
-            currentPlaylistString = JsonConvert.SerializeObject(currentPlaylist);
-            ReaderJson.SaveFile("PlaylistArchive", currentPlaylistString);
+            var currentPlaylist = ReaderJson.DeserializeFile<List<LavalinkTrack>>("PlaylistArchive");
+            currentPlaylist.Add(track); 
+            ReaderJson.SerialiseAndSave(currentPlaylist, "PlaylistArchive");
         }
         public async Task AddToPlaylist(LavalinkTrack track)
         {
-            var currentPlaylistString = ReaderJson.ReadFile("MusicPlaylist");
-            var currentPlaylist = JsonConvert.DeserializeObject<List<LavalinkTrack>>(currentPlaylistString);
-            currentPlaylist.Add(track);
-            currentPlaylistString = JsonConvert.SerializeObject(currentPlaylist);
-            ReaderJson.SaveFile("MusicPlaylist", currentPlaylistString);
+
+            var currentPlaylist = ReaderJson.DeserializeFile<List<LavalinkTrack>>("MusicPlaylist"); 
+            currentPlaylist.Add(track); 
+            ReaderJson.SerialiseAndSave(currentPlaylist, "MusicPlaylist");
         }
         public async Task PauseMusic(InteractionContext ctx)
         {
@@ -202,10 +199,9 @@ namespace Skynet.Services
           
         private async Task AddSearchTermToList(string term, InteractionContext ctx)
         {
-            var allUsersString = ReaderJson.ReadFile("MusicUsers");
-            var allUsers = JsonConvert.DeserializeObject<List<MusicUser>>(allUsersString);
-            var allSearchTermsString = ReaderJson.ReadFile("MusicSearchTerms");
-            var searchTerms = JsonConvert.DeserializeObject<List<MusicSearchTerm>>(allSearchTermsString);
+            var allUsers = ReaderJson.DeserializeFile<List<MusicUser>>("MusicUsers");
+            var searchTerms = ReaderJson.DeserializeFile<List<MusicSearchTerm>>("MusicSearchTerms"); 
+
             var searTerm = searchTerms.FirstOrDefault(x => x.Term == term);
             if (searTerm == null)
             {
@@ -216,9 +212,9 @@ namespace Skynet.Services
             else
             {
                 UpdateMusicUser(searTerm, allUsers, ctx);
-            }
-            ReaderJson.SaveFile("MusicUsers", JsonConvert.SerializeObject(allUsers));
-            ReaderJson.SaveFile("MusicSearchTerms", JsonConvert.SerializeObject(searchTerms));
+            } 
+            ReaderJson.SerialiseAndSave(allUsers, "MusicUsers");
+            ReaderJson.SerialiseAndSave(allUsers, "MusicSearchTerms"); 
         }
         private async Task UpdateMusicUser(MusicSearchTerm term, List<MusicUser> allUsers, InteractionContext ctx)
         {
@@ -246,17 +242,15 @@ namespace Skynet.Services
 
         public async Task Skip(InteractionContext ctx)
         {
-            var connection = await _connectionManager.GetConnectionData(ctx);
-            var currentPlaylistString = ReaderJson.ReadFile("MusicPlaylist");
-            var currentPlaylist = JsonConvert.DeserializeObject<List<LavalinkTrack>>(currentPlaylistString);
+            var connection = await _connectionManager.GetConnectionData(ctx); 
+            var currentPlaylist = ReaderJson.DeserializeFile<List<LavalinkTrack>>("MusicPlaylist"); 
             var firstSong = currentPlaylist.FirstOrDefault();
             if(firstSong == null)
             {
                 throw new Exception("Playlist is empty");
             } 
-            currentPlaylist.Remove(firstSong); 
-            currentPlaylistString = JsonConvert.SerializeObject(currentPlaylist);
-            ReaderJson.SaveFile("MusicPlaylist", currentPlaylistString);
+            currentPlaylist.Remove(firstSong);
+            ReaderJson.SerialiseAndSave(currentPlaylist, "MusicPlaylist"); 
             await _messageSender.SendMessage(ctx, $"Now Playing: {firstSong.Title}", $" Link: {firstSong.Uri}", DiscordColor.Green);
 
             var searchQuery = await connection.NodeConnection.Rest.GetTracksAsync(firstSong.Uri);
@@ -271,9 +265,8 @@ namespace Skynet.Services
 
         public async Task Clear(InteractionContext ctx)
         {
-            var newList = new List<LavalinkTrack>();
-            var newListString = JsonConvert.SerializeObject(newList);
-            ReaderJson.SaveFile("MusicPlaylist", newListString);
+            var newList = new List<LavalinkTrack>(); 
+            ReaderJson.SerialiseAndSave(newList, "MusicPlaylist");
         }
     }
 }

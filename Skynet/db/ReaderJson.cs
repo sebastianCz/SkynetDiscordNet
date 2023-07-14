@@ -1,4 +1,7 @@
 ﻿
+using Newtonsoft.Json;
+using Skynet.Services;
+
 namespace Skynet.db
 {
     /// <summary>
@@ -20,6 +23,12 @@ namespace Skynet.db
                 return false;
             }
         }
+        public static void SerialiseAndSave<T>(T objectToSerialize, string fileName)
+        {
+            var dir = Directory.GetCurrentDirectory();
+            var fileNamePath = Path.Combine(dir, "JsonLib", fileName + ".json");
+            File.WriteAllText(fileNamePath, JsonConvert.SerializeObject(objectToSerialize));
+        }
         //Returns a string containing the entirety of a Json file.
 
         /// <summary>
@@ -31,8 +40,33 @@ namespace Skynet.db
             var dir = Directory.GetCurrentDirectory();
             var fileNamePath = Path.Combine(dir, "db", fileName + ".json");
             return File.ReadAllText(fileNamePath);
+        } 
+        /// <summary>
+        /// Deserializes given json filename to provided Type. 
+        /// Invoke: JsonFile.DeserializeFile<Player>("\\Stories\\ExampleCharacterName");
+        /// </summary>
+        /// <typeparam name="T">Class you want to deserialize to.</typeparam>
+        /// <param name="fileName">Name of json file. </param>
+        /// <returns>Object of class T</returns>
+        public static T DeserializeFile<T>(string fileName)
+        {
+            bool fileExists = ReaderJson.FileExitsInDirectory(fileName);
+            if (fileExists)
+            {
+                var textFromFile = ReaderJson.ReadFile(fileName);
+                return JsonConvert.DeserializeObject<T>(textFromFile);
+            }
+            return default;
         }
-
+        /// <summary>
+        /// saves given json string under the given file. Provide 3rd param string yourFolderName for overload. 
+        /// </summary>
+        public static void SerializedToJson<T>(T objectToSerialize, string fileName)
+        {
+            var dir = Directory.GetCurrentDirectory();
+            var fileNamePath = Path.Combine(dir, "db", fileName + ".json");
+            File.WriteAllText(fileNamePath, JsonConvert.SerializeObject(objectToSerialize));
+        }
         /// <summary>
         /// Checks if file exists in given directory. It assumes file is in JsonLib
         /// </summary>
