@@ -12,7 +12,7 @@ namespace Skynet.Services.Interface
         public Task Skip(InteractionContext ctx);
         public Task Clear(InteractionContext ctx);
         public Task ShowPlaylist(InteractionContext ctx,string options);
-        public Task Shuffle(InteractionContext ctx, string options);
+        public Task Autoplay(InteractionContext ctx, string options);
         
     }
 }

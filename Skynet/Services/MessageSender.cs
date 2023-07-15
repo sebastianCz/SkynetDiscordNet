@@ -13,16 +13,16 @@ namespace Skynet.Services
             switch (level)
             {
                 case LoggingLevel.information:
-                    await SendMessage(ctx, title, description, channel, DiscordColor.Yellow);
+                    await SendMessage(title, description, channel, DiscordColor.Yellow);
                     break;
                 case LoggingLevel.warning:
-                    await SendMessage(ctx, title, description, channel, DiscordColor.Red);
+                    await SendMessage(title, description, channel, DiscordColor.Red);
                     break;
                 default:
                     return;
             }
-        }
-        public async Task SendMessage(InteractionContext ctx, string title, string description, DiscordChannel channel, DiscordColor color)
+        } 
+        public async Task SendMessage(string title, string description, DiscordChannel channel, DiscordColor color)
         {
             var embedMessage = new DiscordEmbedBuilder()
             {
@@ -33,7 +33,7 @@ namespace Skynet.Services
 
             await channel.SendMessageAsync(embedMessage);
         }
-        public async Task SendMessage(InteractionContext ctx, string title, string description, DiscordColor color)
+        public async Task SendMessageAsync(InteractionContext ctx, string title, string description, DiscordColor color)
         {
             var embedMessage = new DiscordEmbedBuilder()
             {

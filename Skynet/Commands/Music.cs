@@ -34,7 +34,7 @@ namespace Skynet.Commands
             }
             catch (Exception e)
             {
-                await _messageSender.SendMessage(ctx, "An Error occured", e.Message, DiscordColor.Red);
+                await _messageSender.SendMessageAsync(ctx, "An Error occured", e.Message, DiscordColor.Red);
                 await _messageSender.LogError(ctx, e.Message, e.StackTrace, LoggingLevel.information);
             }
             
@@ -49,13 +49,13 @@ namespace Skynet.Commands
                 );
             try
             {
+                await _connectionManager.OnCommandChecksAsync(ctx);
                 await _connectionManager.AssureConnected(ctx);
-                await _connectionManager.OnCommandChecksAsync(ctx); 
                 await _music.ResumeMusic(ctx);
             }
             catch (Exception e)
             {
-                await _messageSender.SendMessage(ctx, "An Error occured", e.Message, DiscordColor.Red);
+                await _messageSender.SendMessageAsync(ctx, "An Error occured", e.Message, DiscordColor.Red);
                 await _messageSender.LogError(ctx, e.Message, e.StackTrace, LoggingLevel.information);
             }
         }
@@ -74,7 +74,7 @@ namespace Skynet.Commands
             }
             catch (Exception e)
             {
-                await _messageSender.SendMessage(ctx, "An Error occured", e.Message, DiscordColor.Red);
+                await _messageSender.SendMessageAsync(ctx, "An Error occured", e.Message, DiscordColor.Red);
                 await _messageSender.LogError(ctx, e.Message, e.StackTrace, LoggingLevel.information);
             }
            
@@ -94,7 +94,7 @@ namespace Skynet.Commands
             }
             catch (Exception e)
             {
-                await _messageSender.SendMessage(ctx, "An Error occured", e.Message, DiscordColor.Red);
+                await _messageSender.SendMessageAsync(ctx, "An Error occured", e.Message, DiscordColor.Red);
                 await _messageSender.LogError(ctx, e.Message, e.StackTrace, LoggingLevel.information);
             }
              
@@ -108,14 +108,14 @@ namespace Skynet.Commands
                 .WithContent("Commend received")
                 );
             try
-            {
+            { 
+                await _connectionManager.OnCommandChecksAsync(ctx); 
                 await _connectionManager.AssureConnected(ctx);
-                await _connectionManager.OnCommandChecksAsync(ctx);
                 await _music.Skip(ctx);
             }
             catch (Exception e)
             {
-                await _messageSender.SendMessage(ctx, "An Error occured", e.Message, DiscordColor.Red);
+                await _messageSender.SendMessageAsync(ctx, "An Error occured", e.Message, DiscordColor.Red);
                 await _messageSender.LogError(ctx, e.Message, e.StackTrace, LoggingLevel.information);
             }
 
@@ -132,11 +132,11 @@ namespace Skynet.Commands
             {
                 await _connectionManager.OnCommandChecksAsync(ctx);
                 await _music.Clear(ctx);
-                await _messageSender.SendMessage(ctx, "Playlist cleared", "No tracks queued", DiscordColor.Red);
+                await _messageSender.SendMessageAsync(ctx, "Playlist cleared", "No tracks queued", DiscordColor.Red);
             }
             catch (Exception e)
             {
-                await _messageSender.SendMessage(ctx, "An Error occured", e.Message, DiscordColor.Red);
+                await _messageSender.SendMessageAsync(ctx, "An Error occured", e.Message, DiscordColor.Red);
                 await _messageSender.LogError(ctx, e.Message, e.StackTrace, LoggingLevel.information);
             }
 
@@ -151,13 +151,13 @@ namespace Skynet.Commands
                 );
             try
             {
-                await _connectionManager.AssureConnected(ctx);
                 await _connectionManager.OnCommandChecksAsync(ctx);
-                await _music.Shuffle(ctx,options);
+                await _connectionManager.AssureConnected(ctx); 
+                await _music.Autoplay(ctx,options);
             }
             catch (Exception e)
             {
-                await _messageSender.SendMessage(ctx, "An Error occured", e.Message, DiscordColor.Red);
+                await _messageSender.SendMessageAsync(ctx, "An Error occured", e.Message, DiscordColor.Red);
                 await _messageSender.LogError(ctx, e.Message, e.StackTrace, LoggingLevel.information);
             }
 
@@ -178,7 +178,7 @@ namespace Skynet.Commands
             }
             catch (Exception e)
             {
-                await _messageSender.SendMessage(ctx, "An Error occured", e.Message, DiscordColor.Red);
+                await _messageSender.SendMessageAsync(ctx, "An Error occured", e.Message, DiscordColor.Red);
                 await _messageSender.LogError(ctx, e.Message, e.StackTrace, LoggingLevel.information);
             }
 

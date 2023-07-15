@@ -15,6 +15,7 @@ using Skynet.Domain.Steam;
 using Skynet.Services;
 using Skynet.Services.Interface;
 using Skynet.Services.LavalinkConnection;
+using System.Diagnostics;
 using System.Numerics;
 
 namespace Skynet
@@ -26,7 +27,7 @@ namespace Skynet
         public CommandsNextExtension Commands { get; private set; }
 
         public async Task RunAsync()
-        {
+        { 
             var configString = ReaderJson.ReadFile("config");
             var configJson = JsonConvert.DeserializeObject<ConfigJson>(configString);
             var config = new DiscordConfiguration()
@@ -35,12 +36,16 @@ namespace Skynet
                 Token = configJson.Token,
                 TokenType = TokenType.Bot,
                 AutoReconnect = true,
+                
             };
             Client = new DiscordClient(config);
             Client.UseInteractivity(new InteractivityConfiguration()
             {
                 Timeout = TimeSpan.FromMinutes(2)
+                
             });
+             
+
 
 
             //Services registration
@@ -52,25 +57,11 @@ namespace Skynet
             services.AddScoped<IMusic, MusicService>();
             services.AddScoped<IMessageSender, MessageSender>(); 
             services.AddScoped<ILavalinkConnectionManager, LavalinkConnectionManager>();
+            services.AddScoped<ISearchEngine, SearchEngine>();
+            
             services.AddHttpClient(SteamApiConfig.SteamApiClientName,
                client => { client.BaseAddress = new Uri("https://api.steampowered.com"); });
-
-            //Commands+ service provider config.
-
-            //var commandsConfig = new CommandsNextConfiguration()
-            //{
-            //    StringPrefixes = new string[] { configJson.Prefix },
-            //    EnableMentionPrefix = true,
-            //    EnableDms = true,
-            //    EnableDefaultHelp = false,
-            //    Services = services.BuildServiceProvider()
-
-            //};
-            //
-            // Commands = Client.UseCommandsNext(commandsConfig);
-            //
-            //Commands.RegisterCommands<PrefixCommands>();
-
+             
             var slash = Client.UseSlashCommands(new SlashCommandsConfiguration
             {
                 Services = services.BuildServiceProvider()
@@ -81,17 +72,20 @@ namespace Skynet
 
             var endpoint = new ConnectionEndpoint
             {
-                Hostname = "lavalink.snooby.ml",
-                Port = 443,
-                Secured = true,
+                Hostname = "127.0.0.1",
+                Port = 2333,
+                Secured = false,
 
             };
             var lavaLinkConfig = new LavalinkConfiguration
             {
-                Password = "discord.gg/6xpF6YqVDd",
+                Password = "youshallnotpass",
                 RestEndpoint = endpoint,
                 SocketEndpoint = endpoint
             };
+
+            // execute your command
+
             var lavalinkHandlers = new LavalinkEventsHandlers();
             var lavalink = Client.UseLavalink();
 

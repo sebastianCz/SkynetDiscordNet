@@ -29,11 +29,11 @@ namespace Skynet.Commands
             try
             {
                 var search = await _manageCheaters.DisplayAll();
-                await _messageSender.SendMessage(ctx, search.Title, search.Description, DiscordColor.Green);
+                await _messageSender.SendMessageAsync(ctx, search.Title, search.Description, DiscordColor.Green);
             }
             catch (Exception e)
             {
-                await _messageSender.SendMessage(ctx, "An error occured the operation", e.Message, DiscordColor.Red);
+                await _messageSender.SendMessageAsync(ctx, "An error occured the operation", e.Message, DiscordColor.Red);
                 await _messageSender.LogError(ctx, e.StackTrace, e.Source, LoggingLevel.information);
             }
 
@@ -50,21 +50,21 @@ namespace Skynet.Commands
                 var search = await _manageCheaters.IsCheater(steamProfileLink);
                 if (search.Found)
                 {
-                    await _messageSender.SendMessage(ctx, "Cheater Detected", search.Description, DiscordColor.Red);
+                    await _messageSender.SendMessageAsync(ctx, "Cheater Detected", search.Description, DiscordColor.Red);
                 }
                 if (!search.Found && search.Found != null)
                 {
-                    await _messageSender.SendMessage(ctx, "User is legit", search.Description, DiscordColor.Green);
+                    await _messageSender.SendMessageAsync(ctx, "User is legit", search.Description, DiscordColor.Green);
                 }
 
             }
             catch (Exception e)
             {
-                await _messageSender.SendMessage(ctx, "An error occured the operation", e.Message, DiscordColor.Red);
+                await _messageSender.SendMessageAsync(ctx, "An error occured the operation", e.Message, DiscordColor.Red);
                 await _messageSender.LogError(ctx, e.StackTrace, e.Source, LoggingLevel.information);
                 if (e.InnerException != null)
                 {
-                    await _messageSender.SendMessage(ctx, "Critical error", "A critical error occured. Check if steam is still working properly and try again later.", DiscordColor.Red);
+                    await _messageSender.SendMessageAsync(ctx, "Critical error", "A critical error occured. Check if steam is still working properly and try again later.", DiscordColor.Red);
                     await _messageSender.LogError(ctx, e.StackTrace, e.Source, LoggingLevel.critical);
                 }
 
@@ -88,17 +88,17 @@ namespace Skynet.Commands
                 if (search.Found)
                 {
 
-                    await _messageSender.SendMessage(ctx, search.Title, search.Description, DiscordColor.Green);
+                    await _messageSender.SendMessageAsync(ctx, search.Title, search.Description, DiscordColor.Green);
                 }
                 else
                 {
 
-                    await _messageSender.SendMessage(ctx, search.Title, search.Description, DiscordColor.Red);
+                    await _messageSender.SendMessageAsync(ctx, search.Title, search.Description, DiscordColor.Red);
                 }
             }
             catch (Exception e)
             {
-                await _messageSender.SendMessage(ctx, "User not added", e.Message, DiscordColor.Red);
+                await _messageSender.SendMessageAsync(ctx, "User not added", e.Message, DiscordColor.Red);
                 await _messageSender.LogError(ctx, e.Message, e.StackTrace, LoggingLevel.information);
             }
 
@@ -120,17 +120,17 @@ namespace Skynet.Commands
                 if (search.Found)
                 {
 
-                    await _messageSender.SendMessage(ctx, search.Title, search.Description, DiscordColor.Green);
+                    await _messageSender.SendMessageAsync(ctx, search.Title, search.Description, DiscordColor.Green);
                 }
                 else
                 {
 
-                    await _messageSender.SendMessage(ctx, search.Title, search.Description, DiscordColor.Red);
+                    await _messageSender.SendMessageAsync(ctx, search.Title, search.Description, DiscordColor.Red);
                 }
             }
             catch (Exception e)
             {
-                await _messageSender.SendMessage(ctx, "An Error occured", e.Message, DiscordColor.Red);
+                await _messageSender.SendMessageAsync(ctx, "An Error occured", e.Message, DiscordColor.Red);
                 await _messageSender.LogError(ctx, e.Message, e.StackTrace, LoggingLevel.information);
             }
 
@@ -150,16 +150,16 @@ namespace Skynet.Commands
             {
                 if (_crud.PurgeCheaters(ctx.Member.DisplayName, confirmation))
                 {
-                    await _messageSender.SendMessage(ctx, "List purged", "List purged successfully", DiscordColor.Green);
+                    await _messageSender.SendMessageAsync(ctx, "List purged", "List purged successfully", DiscordColor.Green);
                 }
                 else
                 {
-                    await _messageSender.SendMessage(ctx, "Purge failure", "Impossible to purge. You might not have the right authorisation.\n Make sure the command was entered correctly.", DiscordColor.Red);
+                    await _messageSender.SendMessageAsync(ctx, "Purge failure", "Impossible to purge. You might not have the right authorisation.\n Make sure the command was entered correctly.", DiscordColor.Red);
                 }
             }
             catch (Exception e)
             {
-                await _messageSender.SendMessage(ctx, "An error occured", e.Message, DiscordColor.Red);
+                await _messageSender.SendMessageAsync(ctx, "An error occured", e.Message, DiscordColor.Red);
                 await _messageSender.LogError(ctx, e.Message, e.StackTrace, LoggingLevel.information);
             }
 
