@@ -1,22 +1,22 @@
 ﻿using DSharpPlus;
 using DSharpPlus.CommandsNext;
+using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Interactivity.Extensions;
 using DSharpPlus.Lavalink;
 using DSharpPlus.Net;
 using DSharpPlus.SlashCommands;
-using Microsoft.AspNetCore.Components.Web;
-using Newtonsoft.Json;
+using Microsoft.EntityFrameworkCore;
 using Skynet.Commands;
 using Skynet.db;
-using Skynet.Domain;
-using Skynet.Domain.Steam;
-using Skynet.Services;
+using Skynet.db.Repo;
+using Skynet.Domain.GuildData;
+using Skynet.Services.API;
+using Skynet.Services.CommandHandlingLogic;
 using Skynet.Services.Interface;
 using Skynet.Services.LavalinkConnection;
-using System.Diagnostics;
-using System.Numerics;
+using Skynet.Services.Search;
 
 namespace Skynet
 {
@@ -25,81 +25,103 @@ namespace Skynet
         public DiscordClient Client { get; private set; }
         public InteractivityExtension Interactivity { get; private set; }
         public CommandsNextExtension Commands { get; private set; }
+        public BotConfig()
+        {
+        }
 
-        public async Task RunAsync()
-        { 
-            var configString = ReaderJson.ReadFile("config");
-            var configJson = JsonConvert.DeserializeObject<ConfigJson>(configString);
+        public async Task RunAsync(string[] args)
+        {
+            IConfigurationRoot configuration = new ConfigurationBuilder()
+                   .SetBasePath(Directory.GetCurrentDirectory())
+                   .AddJsonFile("appsettings.json")
+                   .Build();
             var config = new DiscordConfiguration()
             {
                 Intents = DiscordIntents.All,
-                Token = configJson.Token,
+                Token = configuration["AppConfig:token"],
                 TokenType = TokenType.Bot,
                 AutoReconnect = true,
-                
+
             };
             Client = new DiscordClient(config);
             Client.UseInteractivity(new InteractivityConfiguration()
             {
                 Timeout = TimeSpan.FromMinutes(2)
-                
+
             });
-             
 
-
-
+            //DI temporarly(hopefully) disabled due to DsharpPlus problems with DI 
             //Services registration
-            var services = new ServiceCollection(); 
-            services.AddScoped<ICrud, Crud>();
-            services.AddScoped<IValidation, ValidateInput>();
-            services.AddScoped<ISteamApiClient, SteamApiClient>();
-            services.AddScoped<ICheaterLogic, CheaterLogic>();
+            var services = new ServiceCollection();
             services.AddScoped<IMusic, MusicService>();
-            services.AddScoped<IMessageSender, MessageSender>(); 
-            services.AddScoped<ILavalinkConnectionManager, LavalinkConnectionManager>();
+            services.AddScoped<IMessageSender, MessageSender>();
+            services.AddScoped<IYoutubeApiClient, YoutubeApiClient>();
+            services.AddScoped<ILavalinkConnectionManager, LavalinkManager>();
             services.AddScoped<ISearchEngine, SearchEngine>();
-            
-            services.AddHttpClient(SteamApiConfig.SteamApiClientName,
-               client => { client.BaseAddress = new Uri("https://api.steampowered.com"); });
-             
+            services.AddScoped<IGuildMusiDataRepo<GuildMusicData>, GuildMusicDataRepo>();
+            var provider = services.BuildServiceProvider();
             var slash = Client.UseSlashCommands(new SlashCommandsConfiguration
             {
-                Services = services.BuildServiceProvider()
+                Services = provider
+
             });
-            //commands registration
-            //slash.RegisterCommands<CheaterSL>();
-            slash.RegisterCommands<Music>();
+            slash.RegisterCommands<MusicCommandHandler>();
 
             var endpoint = new ConnectionEndpoint
             {
                 Hostname = "127.0.0.1",
                 Port = 2333,
                 Secured = false,
-
             };
+            var x = services.BuildServiceProvider();
+            x.CreateScope();
             var lavaLinkConfig = new LavalinkConfiguration
             {
-                Password = "youshallnotpass",
+                Password = configuration["AppConfig:botPassword"],
                 RestEndpoint = endpoint,
                 SocketEndpoint = endpoint
             };
-
-            // execute your command
-
+            // execute your command 
             var lavalinkHandlers = new LavalinkEventsHandlers();
             var lavalink = Client.UseLavalink();
-
             await Client.ConnectAsync();
-            await lavalink.ConnectAsync(lavaLinkConfig); 
-            lavalink.ConnectedNodes.FirstOrDefault().Value.PlaybackStarted += (con, e) => lavalinkHandlers.PlaybackStarted(con, e);
+            await lavalink.ConnectAsync(lavaLinkConfig);
             lavalink.ConnectedNodes.FirstOrDefault().Value.PlaybackFinished += (con, e) => lavalinkHandlers.PlaybackEnded(con, e);
+            lavalink.ConnectedNodes.FirstOrDefault().Value.TrackStuck += (con, e) => lavalinkHandlers.TrackStuck(con, e);
+            lavalink.ConnectedNodes.FirstOrDefault().Value.LavalinkSocketErrored += (con, e) => lavalinkHandlers.WebSocketClosed(con, e);
+            lavalink.ConnectedNodes.FirstOrDefault().Value.TrackException += (con, e) => lavalinkHandlers.TrackException(con, e);
+            lavalink.ConnectedNodes.FirstOrDefault().Value.PlaybackStarted += (con, e) => lavalinkHandlers.PlaybackStarted(con, e);
+            await DbConfig(args);
             await Task.Delay(-1);
         }
         private Task OnClientReady(ReadyEventArgs e)
         {
             return Task.CompletedTask;
         }
-      
-    }  
+        [AttributeUsage(AttributeTargets.Method, AllowMultiple = false)]
+        public class RequireYearAttribute : CheckBaseAttribute
+        {
+            public int AllowedYear { get; private set; }
+
+            public RequireYearAttribute(int year)
+            {
+                AllowedYear = year;
+            }
+
+            public override Task<bool> ExecuteCheckAsync(CommandContext ctx, bool help)
+            {
+                return Task.FromResult(AllowedYear == DateTime.Now.Year);
+            }
+        }
+
+        public async Task DbConfig(string[] arg)
+        {
+            var context = new BotContext();
+            context.Database.Migrate();
+            await context.SaveChangesAsync();
+            context.Dispose();
+        }
+
+    }
 }
 

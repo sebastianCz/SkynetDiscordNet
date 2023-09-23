@@ -8,11 +8,9 @@ namespace Skynet.Services.Interface
     {
         public Task OnCommandChecksAsync(InteractionContext ctx);
         public Task OnCommandChecksAsync(LavalinkExtension link,LavalinkNodeConnection node, LavalinkGuildConnection guild);
-        public Task<bool> IsConnectedAsync(InteractionContext ctx);
+        public bool IsConnectedToVoice(InteractionContext ctx);
         public Task AssureConnected(InteractionContext ctx);
-        public Task AssureConnected(LavalinkGuildConnection guild, LavalinkNodeConnection node);
-        public Task<LavalinkGuildConnection> GetGuildConnection(InteractionContext ctx);
-        public Task<LavalinkNodeConnection> GetNodeConnection(InteractionContext ctx);
-        public Task<LavalinkConnectionData> GetConnectionData(InteractionContext ctx);
+        public Task AssureConnected(LavalinkGuildConnection guild, LavalinkNodeConnection node); 
+        public void ValidateVC(InteractionContext ctx);
     }
 }

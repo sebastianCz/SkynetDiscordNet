@@ -1,6 +1,5 @@
 ﻿
 using Newtonsoft.Json;
-using Skynet.Services;
 
 namespace Skynet.db
 {
@@ -12,7 +11,7 @@ namespace Skynet.db
         public static bool SaveFile(string fileName, string fileContent)
         {
             var dir = Directory.GetCurrentDirectory();
-            var fileNamePath = Path.Combine(dir,"db", fileName + ".json");
+            var fileNamePath = Path.Combine(dir, "db", fileName + ".json");
             try
             {
                 File.WriteAllText(fileNamePath, fileContent);
@@ -35,12 +34,21 @@ namespace Skynet.db
         /// Provide 1 string to read all json file content. Provide 2 strings ( filename + folder name) to read from a specific folder.
         /// </summary>
         /// <returns>String with content of file</returns>
+        /// 
+        public static string ReadFile(string root, string fileName)
+        {
+            return ReadJsonFile(Path.Combine(root, fileName));
+        }
         public static string ReadFile(string fileName)
         {
+            return ReadJsonFile(Path.Combine("db", fileName));
+        }
+        private static string ReadJsonFile(string path)
+        {
             var dir = Directory.GetCurrentDirectory();
-            var fileNamePath = Path.Combine(dir, "db", fileName + ".json");
+            var fileNamePath = Path.Combine(dir, path + ".json");
             return File.ReadAllText(fileNamePath);
-        } 
+        }
         /// <summary>
         /// Deserializes given json filename to provided Type. 
         /// Invoke: JsonFile.DeserializeFile<Player>("\\Stories\\ExampleCharacterName");
@@ -49,6 +57,16 @@ namespace Skynet.db
         /// <param name="fileName">Name of json file. </param>
         /// <returns>Object of class T</returns>
         public static T DeserializeFile<T>(string fileName)
+        {
+            bool fileExists = ReaderJson.FileExitsInDirectory(fileName);
+            if (fileExists)
+            {
+                var textFromFile = ReaderJson.ReadFile(fileName);
+                return JsonConvert.DeserializeObject<T>(textFromFile);
+            }
+            return default;
+        }
+        public static T DeserializeFile<T>(string root, string fileName)
         {
             bool fileExists = ReaderJson.FileExitsInDirectory(fileName);
             if (fileExists)

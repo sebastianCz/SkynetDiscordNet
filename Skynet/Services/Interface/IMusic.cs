@@ -13,6 +13,10 @@ namespace Skynet.Services.Interface
         public Task Clear(InteractionContext ctx);
         public Task ShowPlaylist(InteractionContext ctx,string options);
         public Task Autoplay(InteractionContext ctx, string options);
-        
+        public Task CreateCustomPlaylist(InteractionContext ctx, string playlistList);
+        public Task RemoveCustomPlaylist(InteractionContext ctx, string stringId);
+        public Task ShowCustomPlaylist(InteractionContext ctx);
+
+
     }
 }
